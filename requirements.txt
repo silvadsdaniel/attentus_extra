@@ -1,0 +1,28 @@
+# Attentus - Workforce Optimization System Requirements
+
+# Core Streamlit and web framework
+streamlit>=1.28.0
+streamlit-authenticator>=0.2.3
+plotly>=5.15.0
+
+# Data processing and analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Optimization libraries - use conda-forge for Windows compatibility
+pulp>=2.7.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Authentication and security
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+
+# File handling
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# Remove problematic mmq package for now
+mmq>=0.0.2
