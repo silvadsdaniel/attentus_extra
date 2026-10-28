@@ -19,78 +19,84 @@ Attentus é um sistema abrangente de otimização da força de trabalho projetad
 - **Otimização de Custos**: Minimizar custos operacionais totais enquanto atende aos níveis de serviço
 
 ### 📊 Análise de Dados
-- **Ajuste Polinomial**: Modelagem avançada da duração de chamadas
-- **Análise Visual**: Gráficos e charts interativos usando Plotly
-- **Upload de Dados**: Suporte para formatos de arquivo CSV e Excel
-- **Exportar Resultados**: Download de resultados de otimização e análise
+- **Ajuste Polinomial**: Modelagem da duração de chamadas, com gráfico e R² na hora
+- **Análise Visual**: Gráfico de cobertura (atendentes necessários × escalados) ao longo do dia
+- **Upload de Dados**: Arquivos CSV e Excel validados assim que são enviados
+- **Exportar Resultados**: Escala de entrada em CSV, pronta para abrir no Excel
 
 ### 🖥️ Interface do Usuário
-- **Interface Web Moderna**: Construída com Streamlit para design responsivo
-- **Painel Interativo**: Métricas em tempo real e ações rápidas
-- **Navegação Multi-página**: Fluxo de trabalho organizado com interface por abas
-- **Responsivo para Mobile**: Funciona em desktop e dispositivos móveis
+- **Frontend em React**: React + TypeScript + Tailwind CSS (Vite), com gráficos Recharts
+- **API em FastAPI**: o modelo, a simulação e o banco continuam em Python, servidos em `/api`
+- **Painel**: custo, equipe, pico de demanda e cobertura da última otimização
+- **Responsivo**: barra lateral no computador, menu recolhível no celular
 
 ## Instalação
 
 ### Pré-requisitos
-- Python 3.8 ou superior
-- Gerenciador de pacotes pip
+- Python 3.10 ou superior
+- Node.js 20 ou superior (para o frontend)
 
-### Instruções de Configuração
+### Desenvolvimento
 
-1. **Clone ou Baixe** os arquivos do projeto para sua máquina local
-
-2. **Instale as Dependências**:
+1. **Instale as dependências do Python** (na raiz do projeto):
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Execute a Aplicação**:
+2. **Suba a API** (porta 8000):
    ```bash
-   streamlit run app.py
+   uvicorn api.main:app --reload --port 8000
    ```
 
-4. **Acesse o Sistema**:
-   - Abra seu navegador web
-   - Navegue para `http://localhost:8501`
-   - Registre uma nova conta ou faça login
+3. **Em outro terminal, suba o frontend** (porta 5173):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. **Acesse** `http://localhost:5173`. O Vite repassa as chamadas `/api` para a API.
+
+### Produção
+
+Compile o frontend uma vez; a própria API passa a servir as páginas:
+
+```bash
+cd frontend && npm ci && npm run build && cd ..
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+Defina a variável de ambiente `ATTENTUS_SECRET_KEY` com um valor secreto e fixo. Sem ela, uma chave
+aleatória é gerada a cada inicialização e todos precisam entrar de novo quando o servidor reinicia.
+
+A documentação interativa da API fica em `http://localhost:8000/docs`.
 
 ## Guia de Uso
 
 ### Configuração Inicial
 
-1. **Registrar uma Conta**:
-   - Clique em "Registrar" na página de login
-   - Preencha seus dados (use função 'admin' para acesso completo)
-   - Crie sua conta
+1. **Criar uma conta**: clique em "Criar conta" na tela de entrada. Se ainda não houver nenhum
+   administrador, a primeira conta criada vira **administrador**; as seguintes são usuários comuns.
+   Administradores podem promover outras contas em **Usuários**.
 
-2. **Login**:
-   - Use suas credenciais para fazer login
-   - Você será direcionado para o painel
+2. **Entrar**: use suas credenciais; você será levado ao painel.
 
 ### Executando uma Otimização
 
-1. **Navegar para Otimização**:
-   - Clique em "🔧 Otimização" na barra lateral
+1. **Abra "Otimização"** no menu lateral.
 
-2. **Configurar Parâmetros**:
-   - Defina horas operacionais e intervalos de tempo
-   - Configure tipos de turno e custos
-   - Ajuste parâmetros operacionais
+2. **Configure os parâmetros**: horas de operação, horário de início, intervalo de análise, tipos de
+   turno com seus custos, espera máxima e pausa entre ligações.
 
-3. **Upload de Dados**:
-   - Baixe o template para dados de volume de chamadas
-   - Preencha com seus dados históricos de chamadas
-   - Faça upload dos arquivos de duração e volume
+3. **Envie os dados**: o arquivo de duração das ligações e o de volume por período. Baixe a
+   **planilha-modelo** para ter exatamente os períodos da configuração atual, ou clique em
+   **Usar dados de exemplo** para experimentar com as planilhas de `dados/`.
 
-4. **Executar Análise**:
-   - Use "Ajuste Polinomial" para verificar o ajuste dos dados
-   - Clique em "Executar Otimização" para planejamento completo da força de trabalho
+4. **Confira a curva de duração**: o gráfico mostra o ajuste polinomial e o R²; ajuste o grau se
+   necessário.
 
-5. **Revisar Resultados**:
-   - Visualize cronogramas detalhados de pessoal
-   - Analise detalhamentos de custos
-   - Baixe resultados para implementação
+5. **Execute**: os resultados mostram custo diário, atendentes escalados, a cobertura do dia, a
+   escala de entrada por horário (exportável em CSV) e o custo por tipo de turno.
 
 ### Requisitos de Formato de Dados
 
@@ -100,74 +106,61 @@ Colunas obrigatórias:
 - `duracao_conexao`: Duração da chamada em segundos
 
 #### Dados de Volume de Chamadas
-Colunas obrigatórias:
-- `numero_medio_ligantes`: Número médio de chamadas por intervalo de tempo
+Colunas obrigatórias (a planilha-modelo já vem com elas):
+- `hora_inicio`: Início do período (HH:MM)
+- `numero_medio_ligantes`: Número médio de chamadas no período (inteiro)
+
+O arquivo precisa ter uma linha por período da configuração (ex.: 96 linhas para 24 h em
+intervalos de 15 min).
 
 ## Suporte e Desenvolvimento
 
 ### Estrutura de Arquivos
 ```
 attentus/
-├── 📄 Arquivos Principais
-│   ├── app.py                        # Aplicação principal com Streamlit
-│   ├── requirements.txt              # Dependências Python
-│   └── README.md                     # Documentação do projeto
+├── requirements.txt                 # Dependências Python (API e modelo)
+├── README.md
 │
-├── 📁 auth/                          # Sistema de Autenticação
-│   ├── autenticacao.py              # Lógica de autenticação
-│   └── __pycache__/                 # Cache Python
+├── api/                             # API FastAPI
+│   ├── main.py                      # Aplicação, rotas e entrega do frontend compilado
+│   ├── seguranca.py                 # Tokens JWT, usuário atual e validações
+│   ├── rotas_auth.py                # Entrar, criar conta, sessão atual
+│   ├── rotas_usuarios.py            # Gerenciamento de usuários (admin)
+│   └── rotas_otimizacao.py          # Planilha-modelo, validação de arquivos, ajuste e otimização
 │
-├── 📁 dados/                        # Dados e Banco de Dados
-│   ├── banco.py                     # Operações de banco de dados
-│   ├── df_duracoes.xlsx            # Dados de exemplo - durações
-│   ├── df_tabela_ligantes.xlsx     # Dados de exemplo - volume de chamadas
-│   ├── nad.xlsx                    # Dados de disponibilidade de pessoal
-│   ├── nan.xlsx                    # Dados de necessidade de atendentes
-│   └── __pycache__/                # Cache Python
+├── frontend/                        # Interface React (Vite + TypeScript + Tailwind)
+│   ├── src/App.tsx                  # Rotas e controle de acesso
+│   ├── src/pages/                   # Entrar, Cadastro, Painel, Otimização, Usuários
+│   ├── src/components/              # Layout, gráficos, componentes de interface
+│   └── src/lib/                     # Cliente da API, sessão, estado e regras da otimização
 │
-├── 📁 modelo/                       # Motor de Otimização
-│   ├── attentus.py                 # Modelo principal de otimização
-│   └── __pycache__/                # Cache Python
+├── dados/
+│   ├── banco.py                     # Operações de banco de dados SQLite
+│   ├── df_duracoes.xlsx             # Dados de exemplo - durações
+│   ├── df_tabela_ligantes.xlsx      # Dados de exemplo - volume de chamadas
+│   ├── nad.xlsx                     # Dados de disponibilidade de pessoal
+│   └── nan.xlsx                     # Dados de necessidade de atendentes
 │
-├── 📁 utilidades/                   # Funções Utilitárias
-│   ├── utils.py                    # Processamento de dados e utilitários
-│   └── __pycache__/                # Cache Python
+├── modelo/
+│   └── attentus.py                  # Modelo de otimização (PuLP)
 │
-├── 📁 paginas/                      # Páginas da Interface Web
-│   ├── navegacao.py                # Sistema de navegação
-│   ├── otimizacao.py              # Página de otimização
-│   ├── indice.py                  # Página inicial/painel
-│   ├── gerenciamento_usuarios.py  # Gerenciamento de usuários
-│   ├── registramento.py           # Página de registro
-│   ├── login.py                   # Página de login
-│   └── __pycache__/               # Cache Python
-│
-├── 📄 Documentação e Análise
-│   ├── nan_attentus_comentado.ipynb   # Notebook Jupyter com análise
-│   ├── nan_attentus_comentado.html    # Versão HTML do notebook
-│   ├── algoritmo_nan.pdf              # Documentação do algoritmo
-│   └── attentus.pdf                   # Documentação técnica
-│
-└── 📁 Arquivos de Sistema
-    ├── __pycache__/                   # Cache Python global
-    ├── .git/                          # Controle de versão Git
-    └── .gitignore                     # Configuração Git
+└── utilidades/
+    └── utils.py                     # Processamento de dados, simulação e ajuste polinomial
 ```
 
 #### Descrição dos Componentes
 
-**Arquivos Principais:**
-- `app.py`: Interface principal do usuário construída com Streamlit
-- `requirements.txt`: Lista de todas as dependências Python necessárias
+**API (`api/`):**
+- Expõe o modelo de otimização, a simulação de demanda e o gerenciamento de usuários em `/api`
+- Autenticação por token (JWT); o usuário é relido do banco a cada requisição
 
-**Sistema de Autenticação (`auth/`):**
-- Gerencia login, registro e controle de acesso de usuários
-- Implementa segurança e sessões de usuário
+**Frontend (`frontend/`):**
+- Aplicação React de página única; durante o desenvolvimento roda no Vite (`npm run dev`)
+- Em produção, `npm run build` gera `frontend/dist`, servido pela própria API
 
 **Dados (`dados/`):**
 - `banco.py`: Operações de banco de dados SQLite
 - Arquivos Excel com dados de exemplo para demonstração
-- Templates de dados para upload do usuário
 
 **Motor de Otimização (`modelo/`):**
 - Contém o algoritmo principal usando programação linear (PuLP)
@@ -175,12 +168,4 @@ attentus/
 
 **Utilitários (`utilidades/`):**
 - Funções auxiliares para processamento de dados
-- Geração de resultados e análise polinomial
-
-**Interface Web (`paginas/`):**
-- Componentes modulares da interface do usuário
-- Páginas separadas para cada funcionalidade do sistema
-
-**Documentação:**
-- Notebooks Jupyter com análise detalhada
-- PDFs com documentação técnica e algoritmos
+- Simulação da demanda (NAN), ajuste polinomial e geração de resultados

@@ -1,7 +1,9 @@
 import hashlib
 import sqlite3
-import streamlit as st
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 class AuthManager:
     def __init__(self, db_path="dados/usuarios.db"):
@@ -74,7 +76,7 @@ class AuthManager:
             conn.close()
             return True
         except Exception as e:
-            st.error(f"Error registering user: {e}")
+            logger.exception("Error registering user")
             return False
     
     def authenticate_user(self, username: str, password: str) -> dict:
@@ -118,7 +120,7 @@ class AuthManager:
             conn.close()
             return None
         except Exception as e:
-            st.error(f"Error authenticating user: {e}")
+            logger.exception("Error authenticating user")
             return None
     
     def get_all_users(self) -> list:
@@ -146,7 +148,7 @@ class AuthManager:
                 'is_active': bool(user[7])
             } for user in users]
         except Exception as e:
-            st.error(f"Error getting users: {e}")
+            logger.exception("Error getting users")
             return []
     
     def update_user_status(self, user_id: int, is_active: bool) -> bool:
@@ -163,7 +165,7 @@ class AuthManager:
             conn.close()
             return True
         except Exception as e:
-            st.error(f"Error updating user status: {e}")
+            logger.exception("Error updating user status")
             return False
     
     def update_user_role(self, user_id: int, role: str) -> bool:
@@ -180,7 +182,7 @@ class AuthManager:
             conn.close()
             return True
         except Exception as e:
-            st.error(f"Error updating user role: {e}")
+            logger.exception("Error updating user role")
             return False
     
     def delete_user(self, user_id: int) -> bool:
@@ -199,7 +201,7 @@ class AuthManager:
             conn.close()
             return True
         except Exception as e:
-            st.error(f"Error deleting user: {e}")
+            logger.exception("Error deleting user")
             return False
     
     def get_user_sessions(self, username: str = None) -> list:
@@ -232,5 +234,5 @@ class AuthManager:
                 'user_agent': session[4]
             } for session in sessions]
         except Exception as e:
-            st.error(f"Error getting sessions: {e}")
+            logger.exception("Error getting sessions")
             return []
