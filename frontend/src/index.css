@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-brand-50: #eef3fc;
+  --color-brand-100: #dce6f9;
+  --color-brand-200: #b9cdf3;
+  --color-brand-300: #8babea;
+  --color-brand-400: #5a84dc;
+  --color-brand-500: #3a67cf;
+  --color-brand-600: #2b59c3;
+  --color-brand-700: #2447a0;
+  --color-brand-800: #213c80;
+  --color-brand-900: #1f3467;
+  --color-brand-950: #142142;
+
+  --color-fundo: #f6f8fb;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  body {
+    @apply bg-fundo text-slate-800;
+  }
+
+  /* números alinhados em tabelas e indicadores */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  dialog::backdrop {
+    background: rgb(15 23 42 / 0.45);
+    backdrop-filter: blur(2px);
+  }
+}

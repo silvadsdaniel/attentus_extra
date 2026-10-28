@@ -2,7 +2,6 @@ import pandas as pd
 from mmq import metodo_minimos_quadrados
 import numpy as np
 from datetime import datetime as dtm, timedelta as td
-import matplotlib.pyplot as plt
 
 def retorna_lista(j, tamanho, lista_momentos):
 
@@ -47,48 +46,86 @@ def gera_resultados(prob, regimes, inicios):
     return df_resultados_pivotado
 
 def ajusta_polinomio(df_duracoes: pd.DataFrame, 
-                     g: int) -> list:
-    
-    coefs = \
-    metodo_minimos_quadrados.mmq(entradas=df_duracoes.loc[:, "percentagem_acumulada"],
-                                saidas=df_duracoes.loc[:, "duracao_conexao"],
-                                g=g)
-    
-    # gera 1000 valores de zero à um
-    x = np.linspace(start=0, stop=1, num=1000)
-    # usa o polinômio ajustado para gerar os valores de y
-    y = np.polyval(p=coefs, x=x)
+                     g: int) -> dict:
+    """
+    Função para ajustar o polinômio de grau g às durações das ligações
 
+    Args:
+        df_duracoes (pd.DataFrame): DataFrame com as durações das ligações. (obrigatório)
+        g (int): Grau do polinômio de ajuste. (obrigatório)
+
+    Returns:
+        dict: Pontos originais, curva ajustada e coeficiente de determinação (R²)
+    """
+    
     percentagens_acumuladas = df_duracoes.loc[:, "percentagem_acumulada"]
     duracoes = df_duracoes.loc[:, "duracao_conexao"]
 
-    # create a figure and axis
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.scatter(percentagens_acumuladas, duracoes, 
-                color="red", label="Dados Originais", edgecolors="black")
+    coefs = metodo_minimos_quadrados.mmq(entradas=percentagens_acumuladas,
+                                         saidas=duracoes,
+                                         g=g)
+    
+    # gera 200 valores de zero à um
+    x = np.linspace(start=0, stop=1, num=200)
+    # usa o polinômio ajustado para gerar os valores de y
+    y = np.polyval(p=coefs, x=x)
 
-    # faz o gráfico do ajuste polinomial
-    ax.plot(x, y)
-    return fig
+    # qualidade do ajuste nos pontos originais
+    previstos = np.polyval(p=coefs, x=percentagens_acumuladas)
+    soma_residuos = float(((duracoes - previstos) ** 2).sum())
+    soma_total = float(((duracoes - duracoes.mean()) ** 2).sum())
+    r2 = 1 - soma_residuos / soma_total if soma_total > 0 else 1.0
+
+    return {
+        "pontos": [{"x": float(px), "y": float(py)} 
+                   for px, py in zip(percentagens_acumuladas, duracoes)],
+        "curva": [{"x": float(cx), "y": float(cy)} for cx, cy in zip(x, y)],
+        "r2": r2
+    }
+
+def calcula_cobertura(prob, regimes, inicios, minutos_dividir):
+    """
+    Função para calcular quantos atendentes estão trabalhando em cada período do dia,
+    usando a mesma regra de cobertura das restrições do modelo attentus
+
+    Args:
+        prob (plp.LpProblem): Problema de otimização resolvido. (obrigatório)
+        regimes (dict): Dicionário índice -> duração do turno em horas. (obrigatório)
+        inicios (dict): Dicionário índice -> horário de início do período. (obrigatório)
+        minutos_dividir (int): Duração de cada período em minutos. (obrigatório)
+
+    Returns:
+        list: Quantidade de atendentes trabalhando em cada período
+    """
+
+    valores = {}
+    for v in prob.variables():
+        indice_regime, indice_inicio = list(map(int, str(v).replace("A_(", "").replace(")", "").split(",_")))
+        valores[(indice_regime, indice_inicio)] = v.varValue or 0
+
+    cobertura = []
+    for j in inicios:
+        total = 0
+        for indice_regime, regime in regimes.items():
+            tamanho = int(regime * 60 / minutos_dividir)
+            lista = retorna_lista(j=j + 1, tamanho=tamanho, 
+                                  lista_momentos=list(inicios.keys()))
+            total += sum(valores.get((indice_regime, k), 0) for k in lista)
+        cobertura.append(int(round(total)))
+
+    return cobertura
 
 def gera_tabelas(
         qtd_horas_total, minutos_dividir,
         hora_inicial, minuto_inicial,
         turnos, encargos):
 
-    hora_final = (hora_inicial + qtd_horas_total) % 24
-    minuto_final = (qtd_horas_total - int(qtd_horas_total)) * 60
-
-    dia_final = 1
-    if hora_inicial == hora_final and minuto_inicial == minuto_final:
-        dia_final = 2
+    # o dia operacional pode atravessar a meia-noite; o fim é exclusivo
+    inicio = dtm(2000, 1, 1, hora_inicial, minuto_inicial)
+    fim = inicio + td(hours=qtd_horas_total)
     
-    inicios = \
-        pd.date_range(
-        start=f"2000-01-01 {hora_inicial:02}:{minuto_inicial:02}:00",
-        end=dtm.strptime(
-        f"2000-01-{dia_final} {hora_final:02}:{minuto_final:02}:59", "%Y-%m-%d %H:%M:%S"),
-        freq=f"{minutos_dividir}min").strftime("%H:%M:%S").tolist()[:-1]
+    inicios = pd.date_range(start=inicio, end=fim, freq=f"{minutos_dividir}min",
+                            inclusive="left").strftime("%H:%M:%S").tolist()
     
     finais = \
         [(dtm.strptime(inicio, "%H:%M:%S") + td(minutes=minutos_dividir)).strftime("%H:%M:%S") 

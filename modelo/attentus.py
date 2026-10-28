@@ -54,7 +54,7 @@ def attentus(df_nan: pd.DataFrame,
         nome_restricao = f"01_{j:05}"
         prob += plp.lpSum(linha) >= nan, nome_restricao
 
-    solver = plp.getSolver("PULP_CBC_CMD")
+    solver = plp.getSolver("PULP_CBC_CMD", msg=False)
     prob.solve(solver=solver)
 
     return prob
