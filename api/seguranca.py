@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import secrets
@@ -12,15 +13,23 @@ from dados.banco import AuthManager
 
 RAIZ = Path(__file__).resolve().parent.parent
 
+logger = logging.getLogger(__name__)
+
 # Em produção, defina ATTENTUS_SECRET_KEY. Sem ela, uma chave aleatória é gerada a cada
 # inicialização e os usuários precisam entrar de novo quando o servidor reinicia.
 CHAVE_SECRETA = os.environ.get("ATTENTUS_SECRET_KEY") or secrets.token_hex(32)
+if "ATTENTUS_SECRET_KEY" not in os.environ:
+    logger.warning("ATTENTUS_SECRET_KEY não definida: as sessões não sobrevivem a reinícios.")
 ALGORITMO = "HS256"
 VALIDADE_TOKEN = timedelta(hours=8)
 
 EMAIL_VALIDO = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-auth_manager = AuthManager(db_path=str(RAIZ / "dados" / "usuarios.db"))
+# Em produção, aponte ATTENTUS_DB_PATH para um disco persistente (ex.: /data/usuarios.db);
+# fora dele, o banco seria apagado a cada deploy.
+CAMINHO_BANCO = os.environ.get("ATTENTUS_DB_PATH") or str(RAIZ / "dados" / "usuarios.db")
+
+auth_manager = AuthManager(db_path=CAMINHO_BANCO)
 esquema_bearer = HTTPBearer(auto_error=False)
 
 

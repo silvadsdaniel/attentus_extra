@@ -10,7 +10,7 @@ class AuthManager:
         """Initialize the authentication manager with SQLite database."""
         self.db_path = db_path
         # Create auth directory if it doesn't exist
-        Path(db_path).parent.mkdir(exist_ok=True)
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
     
     def _init_database(self):

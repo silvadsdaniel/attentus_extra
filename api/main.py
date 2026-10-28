@@ -11,6 +11,13 @@ app.include_router(rotas_auth.router, prefix="/api/auth")
 app.include_router(rotas_usuarios.router, prefix="/api/usuarios")
 app.include_router(rotas_otimizacao.router, prefix="/api/otimizacao")
 
+
+@app.get("/api/saude", tags=["infraestrutura"])
+def saude():
+    """Verificação de saúde usada pela plataforma de hospedagem."""
+    return {"status": "ok"}
+
+
 # Em produção, a própria API serve o frontend compilado (cd frontend && npm run build).
 # Durante o desenvolvimento, o Vite serve o frontend e repassa /api para cá.
 DIST = RAIZ / "frontend" / "dist"

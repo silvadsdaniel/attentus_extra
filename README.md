@@ -66,10 +66,46 @@ cd frontend && npm ci && npm run build && cd ..
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Defina a variável de ambiente `ATTENTUS_SECRET_KEY` com um valor secreto e fixo. Sem ela, uma chave
-aleatória é gerada a cada inicialização e todos precisam entrar de novo quando o servidor reinicia.
+Variáveis de ambiente:
 
-A documentação interativa da API fica em `http://localhost:8000/docs`.
+| Variável | Para que serve |
+|---|---|
+| `ATTENTUS_SECRET_KEY` | Chave das sessões. Use um valor secreto e fixo; sem ela, uma chave aleatória é gerada a cada inicialização e todos precisam entrar de novo quando o servidor reinicia. |
+| `ATTENTUS_DB_PATH` | Caminho do banco SQLite (padrão: `dados/usuarios.db`). Em hospedagem, aponte para um disco persistente. |
+
+Rode **um único processo** (sem `--workers`): o banco é SQLite e, sem `ATTENTUS_SECRET_KEY`, cada
+processo teria uma chave diferente.
+
+A documentação interativa da API fica em `http://localhost:8000/docs`, e `GET /api/saude` responde
+`{"status": "ok"}` para verificações de saúde.
+
+### Docker
+
+O `Dockerfile` compila o frontend e monta a imagem da API (que confere no build se o solver CBC roda):
+
+```bash
+docker build -t attentus .
+docker run -p 8000:8000 -e ATTENTUS_SECRET_KEY=troque-isto -v attentus-dados:/data attentus
+```
+
+O banco fica no volume montado em `/data`. O `dados/usuarios.db` do repositório não entra na imagem.
+
+### Publicar no Render
+
+O arquivo `render.yaml` descreve o serviço: imagem Docker, disco persistente de 1 GB em `/data`,
+chave de sessão gerada pelo Render e verificação de saúde em `/api/saude`.
+
+1. No [Render](https://dashboard.render.com), clique em **New → Blueprint** e conecte o repositório
+   `attentus_extra` (branch `main`).
+2. Revise o serviço `attentus` e confirme. O plano é o menor pago (`0.5c-512mb`), porque disco
+   persistente não existe no plano gratuito; o preço aparece nessa tela.
+3. Aguarde o primeiro build (alguns minutos) e abra a URL `https://attentus-xxxx.onrender.com`.
+4. **Crie sua conta logo em seguida**: num banco novo, a primeira conta vira administrador.
+   As próximas contas criadas pelo cadastro público são usuários comuns.
+
+A cada push na `main`, o Render publica de novo automaticamente. Com disco persistente, o serviço
+fica alguns segundos fora do ar durante cada deploy (o Render para a versão antiga antes de subir a
+nova). Domínio próprio e HTTPS são configurados em **Settings → Custom Domains**.
 
 ## Guia de Uso
 
@@ -119,6 +155,8 @@ intervalos de 15 min).
 ```
 attentus/
 ├── requirements.txt                 # Dependências Python (API e modelo)
+├── Dockerfile                       # Imagem de produção (frontend compilado + API)
+├── render.yaml                      # Blueprint de deploy no Render
 ├── README.md
 │
 ├── api/                             # API FastAPI
