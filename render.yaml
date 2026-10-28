@@ -1,0 +1,23 @@
+# Blueprint do Render: New > Blueprint > escolha este repositório.
+# Especificação: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: attentus
+    runtime: docker
+    # disco persistente só existe em planos pagos; este é o menor deles
+    plan: 0.5c-512mb
+    # região mais próxima do Brasil entre as disponíveis
+    region: virginia
+    branch: main
+    autoDeployTrigger: commit
+    healthCheckPath: /api/saude
+    envVars:
+      # chave das sessões: gerada uma vez pelo Render e mantida entre deploys
+      - key: ATTENTUS_SECRET_KEY
+        generateValue: true
+      - key: ATTENTUS_DB_PATH
+        value: /data/usuarios.db
+    disk:
+      name: attentus-dados
+      mountPath: /data
+      sizeGB: 1
