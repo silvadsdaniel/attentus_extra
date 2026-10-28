@@ -217,7 +217,8 @@ def executar(parametros: str = Form(...), duracoes: UploadFile = File(...),
                                             df_duracoes=df_duracoes,
                                             tempo_maximo_espera=p.tempo_maximo_espera,
                                             tempo_descanso=p.tempo_descanso,
-                                            g=p.grau)
+                                            g=p.grau,
+                                            duracao_periodo=p.intervalo * 60)
     except Exception:
         raise HTTPException(status_code=400,
                             detail="Falha ao simular a demanda. Verifique o arquivo de durações.")

@@ -175,18 +175,22 @@ def gerar_tabela_nan(df_tabela_ligantes: pd.DataFrame,
                      df_duracoes: pd.DataFrame,
                      tempo_maximo_espera: float = 10,
                      tempo_descanso: int = 0,
-                     g: int = 5) -> list:
+                     g: int = 5,
+                     duracao_periodo: int = 900) -> list:
 
     """
     Função para gerar a lista de NANs para cada período do dia
 
     Args:
-        df_tabela_ligantes (pd.DataFrame): DataFrame com a quantidade de ligantes. 
+        df_tabela_ligantes (pd.DataFrame): DataFrame com a quantidade de ligantes.
         (obrigatório)
-        df_duracoes (pd.DataFrame): DataFrame com as durações das ligações. 
+        df_duracoes (pd.DataFrame): DataFrame com as durações das ligações.
         (obrigatório)
         tempo_maximo_espera (float): Tempo máximo de espera (opcional, default=10)
         g (int): Grau do polinômio de ajuste (opcional, default=5)
+        duracao_periodo (int): Duração de cada período do dia em segundos, ou seja,
+        a janela em que as ligações do período são sorteadas (opcional, default=900,
+        períodos de 15 minutos)
     Returns:
         pd.DataFrame: DataFrame com a quantidade de NANs
     """
@@ -207,8 +211,8 @@ def gerar_tabela_nan(df_tabela_ligantes: pd.DataFrame,
         # pega a qtd_ligantes para cada periodo do dia
         qtd_ligantes = linha["numero_medio_ligantes"]
 
-        # gera aleatoriamente os momentos de ligação para cada periodo do dia
-        momentos_ligacoes = np.random.randint(low=0, high=900, size=qtd_ligantes)
+        # gera aleatoriamente os momentos de ligação ao longo de todo o período
+        momentos_ligacoes = np.random.randint(low=0, high=duracao_periodo, size=qtd_ligantes)
         # ordena os momentos de ligação para executar o algoritmo nan
         momentos_ligacoes.sort()
         
